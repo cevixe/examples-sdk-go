@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 3 Factor Cevixe Example - Resolvers
+
+Resources:
+  awsAppSyncServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  dynamodbAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: DirectAppSyncDynamoDB
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "dynamodb:*"
+            Resource:
+              - "arn:aws:dynamodb:*:*:table/*"
+      Roles:
+        - Ref: awsAppSyncServiceRole
+  EventStoreDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      Name: EventStore
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt awsAppSyncServiceRole.Arn
+      DynamoDBConfig:
+        AwsRegion: us-east-1
+        TableName: !ImportValue EventStore
+        UseCallerCredentials: false
+        Versioned: false
+  StateStoreDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      Name: StateStore
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt awsAppSyncServiceRole.Arn
+      DynamoDBConfig:
+        AwsRegion: us-east-1
+        TableName: !ImportValue StateStore
+        UseCallerCredentials: false
+        Versioned: true
+  MockDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      Name: Mock
+      Type: NONE
+
+  SaveCommandFn:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      DataSourceName: !GetAtt EventStoreDataSource.Name
+      FunctionVersion: 2018-05-29
+      Name: SaveCommand
+      RequestMappingTemplate: |
+        #set( $entityID = $util.autoId())
+        #set( $entityType = $ctx.stash.commandType)
+
+        #set( $eventSource = "/$entityType/$entityID")
+        #set( $eventTypeSuffix = "Created")
+        #set( $eventID = 1)
+        #set( $eventType = "$entityType$eventTypeSuffix")
+        #set( $eventTime = $util.time.nowEpochMilliSeconds())
+        #set( $eventPayload = $ctx.stash.commandPayload)
+        #set( $eventAuthor = $util.defaultIfNullOrBlank($context.identity.username, "Unknown"))
+
+        #set( $tracingHeader = $context.request.headers["x-amzn-trace-id"] )
+        #set( $transaction = $util.defaultIfNullOrBlank($tracingHeader.replaceAll("Root=", ""), $util.autoId()) )
+        $util.qr( $ctx.stash.put("transaction", $transaction) )
+
+        {
+          "version" : "2018-05-29",
+          "operation" : "PutItem",
+          "key" : {
+            "source_key": $util.dynamodb.toDynamoDBJson($eventSource),
+            "event_id": $util.dynamodb.toDynamoDBJson($eventID)
+          },
+          "attributeValues": {
+            "event_type": $util.dynamodb.toDynamoDBJson($eventType),
+            "event_time": $util.dynamodb.toDynamoDBJson($eventTime),
+            "event_author": $util.dynamodb.toDynamoDBJson($eventAuthor),
+            "event_payload": $util.dynamodb.toDynamoDBJson($eventPayload),
+            "source_id": $util.dynamodb.toDynamoDBJson($entityID),
+            "source_type": $util.dynamodb.toDynamoDBJson($entityType),
+            "source_time": $util.dynamodb.toDynamoDBJson($eventTime),
+            "source_owner": $util.dynamodb.toDynamoDBJson($eventAuthor),
+            "transaction": $util.dynamodb.toDynamoDBJson($transaction)
+          }
+        }
+      ResponseMappingTemplate: |
+        {}
+
+  CreateProductResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      TypeName: Mutation
+      FieldName: createProduct
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - !GetAtt SaveCommandFn.FunctionId
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("commandType", "CreateProduct") )
+        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.stash.transaction)
+  UpdateProductResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      TypeName: Mutation
+      FieldName: updateProduct
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - !GetAtt SaveCommandFn.FunctionId
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("eventType", "UpdateProductCreated") )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.stash.transaction)
+
+  PublishEventResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      ApiId: !ImportValue GraphqlApiId
+      TypeName: Mutation
+      FieldName: publishEvent
+      DataSourceName: !GetAtt MockDataSource.Name
+      RequestMappingTemplate: |
+        {
+            "version": "2018-05-29",
+            "payload": $util.toJson($ctx.args.eventObject)
+        }
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+

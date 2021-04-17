@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 3 Factor Cevixe Example - Functions
+
+Globals:
+  Function:
+    Runtime: go1.x
+    Timeout: 5
+    Handler: handler
+    MemorySize: 128
+    Environment:
+      Variables:
+        CVX_ENABLE_OBJECT_STORE: 0
+        CVX_GRAPHQL_GATEWAY: !ImportValue GraphqlApiUrl
+        CVX_EVENT_BUS: !ImportValue EventBusArn
+        CVX_EVENT_STORE: !ImportValue EventStore
+        CVX_STATE_STORE: !ImportValue StateStore
+        CVX_OBJECT_STORE: !ImportValue ObjectStore
+
+Resources:
+  CreateProductFnQueue:
+    Type: AWS::SQS::Queue
+  UpdateProductFnQueue:
+    Type: AWS::SQS::Queue
+  CreateProductFn:
+    Type: "AWS::Serverless::Function"
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue EventStore
+        - S3CrudPolicy:
+            BucketName: !ImportValue ObjectStore
+      Events:
+        CreateProduct:
+          Type: SNS
+          Properties:
+            Topic: !ImportValue EventBusArn
+            SqsSubscription:
+              BatchSize: 1
+              QueueArn: !GetAtt CreateProductFnQueue.Arn
+              QueueUrl: !Ref CreateProductFnQueue
+            FilterPolicy:
+              event_type:
+                - CreateProductCreated
+  UpdateProductFn:
+    Type: "AWS::Serverless::Function"
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue EventStore
+        - S3CrudPolicy:
+            BucketName: !ImportValue ObjectStore
+      Events:
+        UpdateProduct:
+          Type: SNS
+          Properties:
+            Topic: !ImportValue EventBusArn
+            SqsSubscription:
+              BatchSize: 1
+              QueueArn: !GetAtt UpdateProductFnQueue.Arn
+              QueueUrl: !Ref UpdateProductFnQueue
+            FilterPolicy:
+              event_type:
+                - UpdateProductCreated
