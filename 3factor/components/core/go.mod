@@ -1,15 +1,9 @@
 module notifications
 
 require (
-	github.com/aws/aws-lambda-go v1.22.0 //indirect
-	github.com/cevixe/aws-sdk-go v1.0.0 // indirect
-	github.com/cevixe/core-sdk-go v1.0.0 // indirect
-	github.com/machinebox/graphql v0.2.2 // indirect
-)
-
-replace (
-	github.com/cevixe/aws-sdk-go => /Users/ronnie/Projects/GitHub/aws-sdk-go
-	github.com/cevixe/core-sdk-go => /Users/ronnie/Projects/GitHub/core-sdk-go
+	github.com/aws/aws-lambda-go v1.23.0
+	github.com/cevixe/aws-sdk-go v0.2.1
+	github.com/cevixe/core-sdk-go v0.1.0
 )
 
 go 1.15
