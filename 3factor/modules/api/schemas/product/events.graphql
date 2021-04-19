@@ -1,0 +1,38 @@
+
+type ProductCreated implements Event {
+    _id: ID!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _sourceId: ID!
+    _sourceType: String!
+    _sourceVersion: Int!
+    _transaction: String!
+    name: String!
+    description: String!
+    price: Float!
+}
+
+type ProductUpdated implements Event {
+    _id: ID!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _sourceId: ID!
+    _sourceType: String!
+    _sourceVersion: Int!
+    _transaction: String!
+    description: String
+    price: Float
+}
+
+type ProductDeleted implements Event {
+    _id: ID!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _sourceId: ID!
+    _sourceType: String!
+    _sourceVersion: Int!
+    _transaction: String!
+}

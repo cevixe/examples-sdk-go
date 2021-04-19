@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ApplicationName:
+    Type: String
+    MaxLength: 120
+    Description: cevixe application name
+  SchemaDefinition:
+    Type: String
+    Description: graphql application schema
+
+Resources:
+  GraphqlApiSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlApiId'
+      DefinitionS3Location: !Ref SchemaDefinition
+
+  CreateProductResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlApiId'
+      TypeName: Mutation
+      FieldName: createProduct
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GraphqlApiCommandFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("commandType", "CreateProduct") )
+        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.prev.result)
+  UpdateProductResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlApiId'
+      TypeName: Mutation
+      FieldName: updateProduct
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GraphqlApiCommandFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("commandType", "UpdateProduct") )
+        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.prev.result)
+  DeleteProductResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlApiId'
+      TypeName: Mutation
+      FieldName: deleteProduct
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GraphqlApiCommandFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("commandType", "DeleteProduct") )
+        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.prev.result)
+

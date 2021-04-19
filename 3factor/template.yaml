@@ -2,31 +2,26 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: 3 Factor Cevixe Example
 
+Parameters:
+  ApplicationName:
+    Type: String
+    MaxLength: 120
+    Description: cevixe application name
+  SchemaDefinition:
+    Type: String
+    Description: graphql application schema
+
 Resources:
-  StoreModule:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: .aws-sam/build/store/template.yaml
   ApiModule:
     Type: AWS::Serverless::Application
     Properties:
+      Parameters:
+        ApplicationName: !Ref ApplicationName
+        SchemaDefinition: !Ref SchemaDefinition
       Location: .aws-sam/build/api/template.yaml
-  ResolversModule:
-    DependsOn:
-      - ApiModule
-      - StoreModule
+  ProductModule:
     Type: AWS::Serverless::Application
     Properties:
-      Location: .aws-sam/build/resolvers/template.yaml
-  CoreModule:
-    DependsOn:
-      - ResolversModule
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: .aws-sam/build/core/template.yaml
-  FunctionsModule:
-    DependsOn:
-      - CoreModule
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: .aws-sam/build/functions/template.yaml
+      Parameters:
+        ApplicationName: !Ref ApplicationName
+      Location: .aws-sam/build/services/product/template.yaml

@@ -1,0 +1,13 @@
+
+type Product implements Entity {
+    _id: ID!
+    _type: String!
+    _version: Int!
+    _createdAt: AWSDateTime!
+    _createdBy: String!
+    _updatedAt: AWSDateTime!
+    _updatedBy: String!
+    name: String!
+    description: String!
+    price: Float!
+}

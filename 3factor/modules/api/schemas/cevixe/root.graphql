@@ -1,0 +1,18 @@
+type Query
+type Mutation
+type Subscription
+
+scalar AWSJSON
+scalar AWSDate
+scalar AWSTime
+scalar AWSDateTime
+scalar AWSTimestamp
+scalar AWSEmail
+scalar AWSPhone
+scalar AWSURL
+scalar AWSIPAddress
+
+directive @aws_iam on FIELD_DEFINITION | OBJECT
+directive @aws_subscribe(
+    mutations: [String]
+) on FIELD_DEFINITION

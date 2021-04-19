@@ -1,0 +1,6 @@
+
+type CommandMetadata {
+    id: ID!
+    type: String!
+    transaction: ID!
+}

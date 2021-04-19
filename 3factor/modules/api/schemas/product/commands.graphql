@@ -1,0 +1,22 @@
+
+extend type Mutation {
+    createProduct(input: CreateProductInput!): CommandMetadata!
+    updateProduct(input: UpdateProductInput!): CommandMetadata!
+    deleteProduct(input: DeleteProductInput!): CommandMetadata!
+}
+
+input CreateProductInput {
+    name: String!
+    description: String!
+    price: Float!
+}
+
+input UpdateProductInput {
+    id: ID!
+    description: String
+    price: Float
+}
+
+input DeleteProductInput {
+    id: ID!
+}

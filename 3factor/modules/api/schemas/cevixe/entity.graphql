@@ -1,0 +1,25 @@
+
+extend type Query {
+    entities(type: String!, limit: Int, nextToken: String): EntityPage!
+    entity(type: String!, id: ID!): Entity
+    entityVersion(type: String!, id: ID!, version: Int!): Entity
+}
+
+type EntityPage {
+    items: [Entity]!
+    nextToken: String
+}
+
+interface Entity {
+    _id: ID!
+    _type: String!
+    _version: Int!
+    _createdAt: AWSDateTime!
+    _createdBy: String!
+    _updatedAt: AWSDateTime!
+    _updatedBy: String!
+}
+
+extend type Message {
+    entity: Entity!
+}
