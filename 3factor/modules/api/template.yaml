@@ -44,8 +44,8 @@ Resources:
                 - - !Ref ApplicationName
                   - 'GraphqlApiCommandFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("commandType", "CreateProduct") )
-        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "CreateProduct") )
+        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
         {}
       ResponseMappingTemplate: |
         $util.toJson($ctx.prev.result)
@@ -71,8 +71,8 @@ Resources:
                 - - !Ref ApplicationName
                   - 'GraphqlApiCommandFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("commandType", "UpdateProduct") )
-        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "UpdateProduct") )
+        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
         {}
       ResponseMappingTemplate: |
         $util.toJson($ctx.prev.result)
@@ -98,8 +98,35 @@ Resources:
                 - - !Ref ApplicationName
                   - 'GraphqlApiCommandFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("commandType", "DeleteProduct") )
-        $util.qr( $ctx.stash.put("commandPayload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "DeleteProduct") )
+        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.prev.result)
+
+  PublishMessageResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlApiId'
+      TypeName: Mutation
+      FieldName: publishMessage
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GraphqlApiPublishMessageFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("message", $ctx.args.input) )
         {}
       ResponseMappingTemplate: |
         $util.toJson($ctx.prev.result)
