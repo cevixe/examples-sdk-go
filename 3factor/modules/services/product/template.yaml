@@ -16,12 +16,12 @@ Globals:
     MemorySize: 128
     Environment:
       Variables:
-        CVX_GRAPHQL_API_URL:
+        CVX_GRAPHQL_GATEWAY_URL:
           Fn::ImportValue:
             Fn::Join:
               - "-"
               - - !Ref ApplicationName
-                - 'GraphqlApiUrl'
+                - 'GraphqlGatewayUrl'
         CVX_EVENT_BUS_ARN:
           Fn::ImportValue:
             Fn::Join:
@@ -34,6 +34,12 @@ Globals:
               - "-"
               - - !Ref ApplicationName
                 - 'EventStoreName'
+        CVX_CONTROL_STORE_NAME:
+          Fn::ImportValue:
+            Fn::Join:
+              - "-"
+              - - !Ref ApplicationName
+                - 'ControlStoreName'
         CVX_STATE_STORE_NAME:
           Fn::ImportValue:
             Fn::Join:
@@ -90,7 +96,7 @@ Resources:
               QueueUrl: !Ref CreateProductFnQueue
             FilterPolicy:
               event_type:
-                - CreateProductCreated
+                - CreateProductRequested
   UpdateProductFn:
     Type: AWS::Serverless::Function
     Metadata:
@@ -127,7 +133,7 @@ Resources:
               QueueUrl: !Ref UpdateProductFnQueue
             FilterPolicy:
               event_type:
-                - UpdateProductCreated
+                - UpdateProductRequested
   DeleteProductFn:
     Type: AWS::Serverless::Function
     Metadata:
@@ -164,4 +170,4 @@ Resources:
               QueueUrl: !Ref DeleteProductFnQueue
             FilterPolicy:
               event_type:
-                - DeleteProductCreated
+                - DeleteProductRequested

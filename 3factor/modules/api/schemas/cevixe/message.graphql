@@ -1,34 +1,22 @@
 
-extend type Query {
-    message(entityType: String!, entityId: ID!, eventId: ID!): Message
-    entityMessages(type: String!, id: ID!, limit: Int, nextToken: String): MessagePage!
-    transactionMessages(transaction: ID!, limit: Int, nextToken: String): MessagePage!
-}
-
 extend type Mutation {
-    publishMessage(input: AWSJSON!): Message
+    publishEventMessage(input: AWSJSON!): EventMessage
     @aws_iam
 }
 
 extend type Subscription {
-    onEntityMessage(entityType: String!, entityId: ID, entityOwner: String): Message
-    @aws_subscribe(mutations: ["publishMessage"])
-    onTransactionMessage(transaction: ID!, eventType: String, eventAuthor: String): Message
-    @aws_subscribe(mutations: ["publishMessage"])
+    onEntityEventMessage(entityType: String!, entityId: ID, entityOwner: String): EventMessage
+    @aws_subscribe(mutations: ["publishEventMessage"])
+    onTransactionEventMessage(transaction: ID!, eventType: String, eventAuthor: String): EventMessage
+    @aws_subscribe(mutations: ["publishEventMessage"])
 }
 
-type Message @aws_iam {
+type EventMessage @aws_iam {
     transaction: ID!
+    eventId: ID!
     eventType: String!
     eventAuthor: String!
-    eventJson: AWSJSON!
     entityId: ID!
     entityType: String!
     entityOwner: String!
-    entityJson: AWSJSON!
-}
-
-type MessagePage {
-    items: [Message]!
-    nextToken: String
 }

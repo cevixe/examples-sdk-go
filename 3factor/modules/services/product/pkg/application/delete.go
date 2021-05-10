@@ -4,9 +4,7 @@ import (
 	"context"
 	"github.com/cevixe/core-sdk-go/cevixe"
 	"github.com/cevixe/core-sdk-go/core"
-	"github.com/cevixe/examples-sdk-go/3factor/services/product/pkg/domain/aggregate"
 	"github.com/cevixe/examples-sdk-go/3factor/services/product/pkg/domain/event"
-	"reflect"
 )
 
 type DeleteProduct struct {
@@ -15,10 +13,13 @@ type DeleteProduct struct {
 
 func (svc ProductApplicationServiceImpl) DeleteProduct(ctx context.Context, input core.Event) core.Event {
 	cmd := &DeleteProduct{}
-	input.Payload(cmd)
+	input.Data(cmd)
 
-	entityState := &aggregate.Product{}
-	entity := cevixe.Entity(ctx, reflect.TypeOf(entityState).Name(), cmd.ID)
+	entity := cevixe.Entity(ctx, "Product", cmd.ID)
 
-	return cevixe.NewEvent(ctx, entity, &event.ProductDeleted{}, nil)
+	if entity == nil {
+		return cevixe.NewBusinessEvent(ctx, &core.DomainEntityNotFound{Type: "Product", ID: cmd.ID})
+	} else {
+		return cevixe.NewDomainEvent(ctx, entity, &event.ProductDeleted{}, nil)
+	}
 }

@@ -1,11 +1,25 @@
 
 extend type Mutation {
-    createProduct(input: CreateProductInput!): CommandMetadata!
-    updateProduct(input: UpdateProductInput!): CommandMetadata!
-    deleteProduct(input: DeleteProductInput!): CommandMetadata!
+    createProduct(input: CreateProductInput!): ID!
+    updateProduct(input: UpdateProductInput!): ID!
+    deleteProduct(input: DeleteProductInput!): ID!
 }
 
 input CreateProductInput {
+    name: String!
+    description: String!
+    price: Float!
+}
+
+type CreateProductRequested implements Event {
+    _id: ID!
+    _source: String!
+    _class: String!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _transaction: String!
+    _entity: Entity
     name: String!
     description: String!
     price: Float!
@@ -17,6 +31,32 @@ input UpdateProductInput {
     price: Float
 }
 
+type UpdateProductRequested implements Event {
+    _id: ID!
+    _source: String!
+    _class: String!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _transaction: String!
+    _entity: Entity
+    id: ID!
+    description: String
+    price: Float
+}
+
 input DeleteProductInput {
+    id: ID!
+}
+
+type DeleteProductRequested implements Event {
+    _id: ID!
+    _source: String!
+    _class: String!
+    _type: String!
+    _time: AWSDateTime!
+    _author: String!
+    _transaction: String!
+    _entity: Entity
     id: ID!
 }

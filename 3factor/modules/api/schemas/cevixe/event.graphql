@@ -1,15 +1,25 @@
 
+extend type Query {
+    event(source: String!, id: ID!): Event
+    domainEvents(entityType: String!, entityId: ID!, limit: Int, nextToken: String): EventPage
+    transactionEvents(transactionId: ID!, limit: Int, nextToken: String): EventPage
+}
+
+type EventPage {
+    items: [Event]!
+    nextToken: String
+}
+
 interface Event {
     _id: ID!
+    _source: String!
+    _class: String!
     _type: String!
     _time: AWSDateTime!
     _author: String!
-    _sourceId: ID!
-    _sourceType: String!
-    _sourceVersion: Int!
     _transaction: String!
 }
 
-extend type Message {
+extend type EventMessage {
     event: Event!
 }

@@ -20,6 +20,6 @@ interface Entity {
     _updatedBy: String!
 }
 
-extend type Message {
-    entity: Entity!
+extend interface Event {
+    _entity: Entity
 }

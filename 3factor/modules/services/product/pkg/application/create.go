@@ -16,7 +16,7 @@ type CreateProduct struct {
 
 func (svc ProductApplicationServiceImpl) CreateProduct(ctx context.Context, input core.Event) core.Event {
 	cmd := &CreateProduct{}
-	input.Payload(cmd)
+	input.Data(cmd)
 
 	newEvent := &event.ProductCreated{
 		Name:        cmd.Name,
@@ -30,5 +30,5 @@ func (svc ProductApplicationServiceImpl) CreateProduct(ctx context.Context, inpu
 		Price:       cmd.Price,
 	}
 
-	return cevixe.NewEvent(ctx, nil, newEvent, newState)
+	return cevixe.NewDomainEvent(ctx, nil, newEvent, newState)
 }

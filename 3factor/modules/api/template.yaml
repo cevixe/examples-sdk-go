@@ -19,7 +19,7 @@ Resources:
           Fn::Join:
             - "-"
             - - !Ref ApplicationName
-              - 'GraphqlApiId'
+              - 'GraphqlGatewayId'
       DefinitionS3Location: !Ref SchemaDefinition
 
   CreateProductResolver:
@@ -32,7 +32,7 @@ Resources:
           Fn::Join:
             - "-"
             - - !Ref ApplicationName
-              - 'GraphqlApiId'
+              - 'GraphqlGatewayId'
       TypeName: Mutation
       FieldName: createProduct
       Kind: PIPELINE
@@ -42,10 +42,10 @@ Resources:
               Fn::Join:
                 - "-"
                 - - !Ref ApplicationName
-                  - 'GraphqlApiCommandFnId'
+                  - 'CreateCommandEventFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("type", "CreateProduct") )
-        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "CreateProductRequested") )
+        $util.qr( $ctx.stash.put("data", $context.arguments.input) )
         {}
       ResponseMappingTemplate: |
         $util.toJson($ctx.prev.result)
@@ -59,7 +59,7 @@ Resources:
           Fn::Join:
             - "-"
             - - !Ref ApplicationName
-              - 'GraphqlApiId'
+              - 'GraphqlGatewayId'
       TypeName: Mutation
       FieldName: updateProduct
       Kind: PIPELINE
@@ -69,13 +69,13 @@ Resources:
               Fn::Join:
                 - "-"
                 - - !Ref ApplicationName
-                  - 'GraphqlApiCommandFnId'
+                  - 'CreateCommandEventFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("type", "UpdateProduct") )
-        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "UpdateProductRequested") )
+        $util.qr( $ctx.stash.put("data", $context.arguments.input) )
         {}
       ResponseMappingTemplate: |
-        $util.toJson($ctx.prev.result)
+        $util.toJson($ctx.result)
   DeleteProductResolver:
     Type: AWS::AppSync::Resolver
     DependsOn:
@@ -86,7 +86,7 @@ Resources:
           Fn::Join:
             - "-"
             - - !Ref ApplicationName
-              - 'GraphqlApiId'
+              - 'GraphqlGatewayId'
       TypeName: Mutation
       FieldName: deleteProduct
       Kind: PIPELINE
@@ -96,15 +96,15 @@ Resources:
               Fn::Join:
                 - "-"
                 - - !Ref ApplicationName
-                  - 'GraphqlApiCommandFnId'
+                  - 'CreateCommandEventFnId'
       RequestMappingTemplate: |
-        $util.qr( $ctx.stash.put("type", "DeleteProduct") )
-        $util.qr( $ctx.stash.put("payload", $context.arguments.input) )
+        $util.qr( $ctx.stash.put("type", "DeleteProductRequested") )
+        $util.qr( $ctx.stash.put("data", $context.arguments.input) )
         {}
       ResponseMappingTemplate: |
-        $util.toJson($ctx.prev.result)
+        $util.toJson($ctx.result)
 
-  PublishMessageResolver:
+  PublishEventMessageResolver:
     Type: AWS::AppSync::Resolver
     DependsOn:
       - GraphqlApiSchema
@@ -114,9 +114,9 @@ Resources:
           Fn::Join:
             - "-"
             - - !Ref ApplicationName
-              - 'GraphqlApiId'
+              - 'GraphqlGatewayId'
       TypeName: Mutation
-      FieldName: publishMessage
+      FieldName: publishEventMessage
       Kind: PIPELINE
       PipelineConfig:
         Functions:
@@ -124,10 +124,210 @@ Resources:
               Fn::Join:
                 - "-"
                 - - !Ref ApplicationName
-                  - 'GraphqlApiPublishMessageFnId'
+                  - 'PublishEventMessageFnId'
       RequestMappingTemplate: |
         $util.qr( $ctx.stash.put("message", $ctx.args.input) )
         {}
       ResponseMappingTemplate: |
-        $util.toJson($ctx.prev.result)
+        $util.toJson($ctx.result)
 
+  EventResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: event
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetEventByIdFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("source", $ctx.args.source) )
+        $util.qr( $ctx.stash.put("id", $ctx.args.id) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  DomainEventsResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: domainEvents
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetDomainEventsFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("entityType", $ctx.args.entityType) )
+        $util.qr( $ctx.stash.put("entityId", $ctx.args.entityId) )
+        $util.qr( $ctx.stash.put("limit", $ctx.args.limit) )
+        $util.qr( $ctx.stash.put("nextToken", $ctx.args.nextToken) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  TransactionEventsResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: transactionEvents
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetTransactionEventsFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("transactionId", $ctx.args.transactionId) )
+        $util.qr( $ctx.stash.put("limit", $ctx.args.limit) )
+        $util.qr( $ctx.stash.put("nextToken", $ctx.args.nextToken) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  EntitiesResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: entities
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetEntitiesByTypeFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("type", $ctx.args.type) )
+        $util.qr( $ctx.stash.put("limit", $ctx.args.limit) )
+        $util.qr( $ctx.stash.put("nextToken", $ctx.args.nextToken) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  EntityResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: entity
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetEntityByIdFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("type", $ctx.args.type) )
+        $util.qr( $ctx.stash.put("id", $ctx.args.id) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  EntityVersionResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: entityVersion
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetEntityVersionFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("type", $ctx.args.type) )
+        $util.qr( $ctx.stash.put("id", $ctx.args.id) )
+        $util.qr( $ctx.stash.put("version", $ctx.args.version) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)
+
+  EntityVersionsResolver:
+    Type: AWS::AppSync::Resolver
+    DependsOn:
+      - GraphqlApiSchema
+    Properties:
+      ApiId:
+        Fn::ImportValue:
+          Fn::Join:
+            - "-"
+            - - !Ref ApplicationName
+              - 'GraphqlGatewayId'
+      TypeName: Query
+      FieldName: entityVersions
+      Kind: PIPELINE
+      PipelineConfig:
+        Functions:
+          - Fn::ImportValue:
+              Fn::Join:
+                - "-"
+                - - !Ref ApplicationName
+                  - 'GetEntityVersionsFnId'
+      RequestMappingTemplate: |
+        $util.qr( $ctx.stash.put("type", $ctx.args.type) )
+        $util.qr( $ctx.stash.put("id", $ctx.args.id) )
+        {}
+      ResponseMappingTemplate: |
+        $util.toJson($ctx.result)

@@ -6,7 +6,6 @@ import (
 	"github.com/cevixe/core-sdk-go/core"
 	"github.com/cevixe/examples-sdk-go/3factor/services/product/pkg/domain/aggregate"
 	"github.com/cevixe/examples-sdk-go/3factor/services/product/pkg/domain/event"
-	"reflect"
 )
 
 type UpdateProduct struct {
@@ -17,10 +16,14 @@ type UpdateProduct struct {
 
 func (svc ProductApplicationServiceImpl) UpdateProduct(ctx context.Context, input core.Event) core.Event {
 	cmd := &UpdateProduct{}
-	input.Payload(cmd)
+	input.Data(cmd)
+
+	entity := cevixe.Entity(ctx, "Product", cmd.ID)
+	if entity == nil {
+		return cevixe.NewBusinessEvent(ctx, &core.DomainEntityNotFound{Type: "Product", ID: cmd.ID})
+	}
 
 	entityState := &aggregate.Product{}
-	entity := cevixe.Entity(ctx, reflect.TypeOf(entityState).Name(), cmd.ID)
 	entity.State(entityState)
 
 	newDescription := entityState.Description
@@ -45,5 +48,5 @@ func (svc ProductApplicationServiceImpl) UpdateProduct(ctx context.Context, inpu
 		Price:       cmd.Price,
 	}
 
-	return cevixe.NewEvent(ctx, entity, newEvent, newState)
+	return cevixe.NewDomainEvent(ctx, entity, newEvent, newState)
 }

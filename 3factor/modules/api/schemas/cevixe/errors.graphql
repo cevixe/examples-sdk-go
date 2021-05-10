@@ -1,6 +1,4 @@
-
-
-type ProductCreated implements Event {
+type DomainValidationFailed implements Event {
     _id: ID!
     _source: String!
     _class: String!
@@ -11,10 +9,9 @@ type ProductCreated implements Event {
     _entity: Entity
     name: String!
     description: String!
-    price: Float!
 }
 
-type ProductUpdated implements Event {
+type DomainEntityNotFound implements Event {
     _id: ID!
     _source: String!
     _class: String!
@@ -23,17 +20,6 @@ type ProductUpdated implements Event {
     _author: String!
     _transaction: String!
     _entity: Entity
-    description: String
-    price: Float
-}
-
-type ProductDeleted implements Event {
-    _id: ID!
-    _source: String!
-    _class: String!
-    _type: String!
-    _time: AWSDateTime!
-    _author: String!
-    _transaction: String!
-    _entity: Entity
+    type: String!
+    id: String!
 }
